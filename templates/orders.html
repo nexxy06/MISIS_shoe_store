@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Заказы — ООО «Обувь»</title>
+  <link rel="icon" href="/static/favicon.ico">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<!-- ═══ HEADER ══════════════════════════════════════════════════════════ -->
+<header class="site-header">
+  <div class="header-left">
+    <a href="{{home_href}}">
+      <img src="/static/logo.png" alt="ООО Обувь" class="logo">
+    </a>
+    <span class="company-name">ООО «Обувь»</span>
+  </div>
+  <div class="header-center">
+    <h1 class="page-title">Заказы</h1>
+  </div>
+  <div class="header-right">
+    {{user_badge}}
+  </div>
+</header>
+
+<!-- ═══ NAV ═════════════════════════════════════════════════════════════ -->
+{{nav_bar}}
+
+<!-- ═══ MAIN ════════════════════════════════════════════════════════════ -->
+<main class="main-content">
+
+  <!-- Add-order button: visible only for Администратор -->
+  {{toolbar}}
+
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>№</th>
+          <th>Дата заказа</th>
+          <th>Дата доставки</th>
+          <th>Пункт выдачи</th>
+          <th>Клиент</th>
+          <th>Товары</th>
+          <th>Код</th>
+          <th>Статус</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {{orders_rows}}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal placeholder for Администратор -->
+  <div id="order-modal" class="modal-overlay" style="display:none"></div>
+
+</main>
+
+<script src="/static/app.js"></script>
+<script>initPage('{{role}}', 'Заказы');</script>
+</body>
+</html>

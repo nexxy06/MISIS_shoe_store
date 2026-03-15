@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Каталог товаров — ООО «Обувь»</title>
+  <link rel="icon" href="/static/favicon.ico">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<!-- ═══ HEADER ══════════════════════════════════════════════════════════ -->
+<header class="site-header">
+  <div class="header-left">
+    <a href="{{home_href}}">
+      <img src="/static/logo.png" alt="ООО Обувь" class="logo">
+    </a>
+    <span class="company-name">ООО «Обувь»</span>
+  </div>
+  <div class="header-center">
+    <h1 class="page-title">Каталог товаров</h1>
+  </div>
+  <div class="header-right">
+    {{user_badge}}
+  </div>
+</header>
+
+<!-- ═══ NAV ═════════════════════════════════════════════════════════════ -->
+{{nav_bar}}
+
+<!-- ═══ MAIN ════════════════════════════════════════════════════════════ -->
+<main class="main-content">
+
+  <!-- Filter bar: visible only for Менеджер / Администратор -->
+  {{filter_bar}}
+
+  <!-- Add-product button: visible only for Администратор -->
+  {{toolbar}}
+
+  <!-- Colour legend -->
+  <div class="legend-row">
+    <span class="legend-item legend-discount">▌ Скидка &gt;15%</span>
+    <span class="legend-item legend-nostock">▌ Нет в наличии</span>
+  </div>
+
+  <!-- Product table — rendered server-side -->
+  <div id="prod-container">
+    {{products_table}}
+  </div>
+
+  <!-- Modal placeholder for Администратор -->
+  {{product_modal}}
+
+</main>
+
+<script src="/static/app.js"></script>
+<script>initPage('{{role}}', 'Каталог товаров');</script>
+</body>
+</html>

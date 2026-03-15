@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Авторизация — ООО «Обувь»</title>
+  <link rel="icon" href="/static/favicon.ico">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-left">
+    <a href="/"><img src="/static/logo.png" alt="ООО Обувь" class="logo"></a>
+    <span class="company-name">ООО «Обувь»</span>
+  </div>
+  <div class="header-center">
+    <h1 class="page-title">Авторизация</h1>
+  </div>
+  <div class="header-right">
+    <div class="user-badge">
+      <a href="/products?guest=1" class="btn-logout">Войти как гость</a>
+    </div>
+  </div>
+</header>
+
+<main class="main-content">
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo-wrap">
+        <img src="/static/logo.png" alt="ООО Обувь" class="login-logo">
+      </div>
+      <h2>Добро пожаловать</h2>
+      <p class="login-sub">Войдите в аккаунт или продолжите как гость</p>
+
+      <div id="err-box" class="error-msg" style="display:none"></div>
+
+      <form id="login-form" autocomplete="on">
+        <label for="f-login">Логин</label>
+        <input id="f-login" name="login" type="text"
+               placeholder="your@email.com" required autocomplete="username">
+
+        <label for="f-pass">Пароль</label>
+        <div class="pw-wrap">
+          <input id="f-pass" name="password" type="password"
+                 placeholder="••••••" required autocomplete="current-password">
+          <button type="button" class="pw-toggle" onclick="togglePw()" tabindex="-1">👁</button>
+        </div>
+
+        <button type="submit" class="btn-primary btn-block mt-1">Войти</button>
+      </form>
+
+      <div class="login-sep"><span>или</span></div>
+      <a href="/products?guest=1" class="btn-secondary btn-block">Продолжить как гость</a>
+    </div>
+  </div>
+</main>
+
+<script src="/static/app.js"></script>
+<script>initPage('', 'Авторизация');</script>
+</body>
+</html>

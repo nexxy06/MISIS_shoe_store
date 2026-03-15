@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Страница не найдена — ООО «Обувь»</title>
+  <link rel="icon" href="/static/favicon.ico">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-left">
+    <a href="/"><img src="/static/logo.png" alt="ООО Обувь" class="logo"></a>
+    <span class="company-name">ООО «Обувь»</span>
+  </div>
+  <div class="header-center">
+    <h1 class="page-title">Страница не найдена</h1>
+  </div>
+  <div class="header-right">
+    {{user_badge}}
+  </div>
+</header>
+
+{{nav_bar}}
+
+<main class="main-content">
+  <div class="empty-state">
+    <div style="font-size:3rem;margin-bottom:1rem">🔍</div>
+    <div style="font-size:1.2rem;font-weight:700;margin-bottom:.5rem">404 — Страница не найдена</div>
+    <div style="color:#888;margin-bottom:1.5rem">Запрошенная страница не существует.</div>
+    <a href="/" class="btn-primary">На главную</a>
+  </div>
+</main>
+
+<script src="/static/app.js"></script>
+<script>initPage('{{role}}', '404');</script>
+</body>
+</html>
