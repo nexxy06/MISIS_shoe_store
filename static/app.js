@@ -250,7 +250,7 @@ async function openProductModal(productId) { // eslint-disable-line no-unused-va
 
         <div class="modal-footer">
           <button type="button" class="btn-secondary" onclick="closeModal('product-modal')">Отмена</button>
-          <button type="submit" class="btn-primary">💾 Сохранить</button>
+          <button type="submit" class="btn-primary">Сохранить</button>
         </div>
       </form>
     </div>`;
