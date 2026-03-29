@@ -79,9 +79,11 @@ def fetch_products(
             "   OR p.product_name  LIKE ?"
             "   OR c.category_name LIKE ?"
             "   OR s.supplier_name LIKE ?"
-            "   OR m.manufacturer_name LIKE ?)"
+            "   OR m.manufacturer_name LIKE ?"
+            "   OR p.description   LIKE ?"
+            "   OR p.unit         LIKE ?)"
         )
-        params += [f"%{search}%"] * 5
+        params += [f"%{search}%"] * 7
     if category:
         sql += " AND c.category_name = ?"
         params.append(category)
