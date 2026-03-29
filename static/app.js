@@ -1,12 +1,14 @@
 'use strict';
 /* ═══════════════════════════════════════════════════════════════════════════
    ООО «Обувь» — Frontend JavaScript
-   Handles: login form, product CRUD modal, order CRUD modal, nav highlighting
    ═══════════════════════════════════════════════════════════════════════════ */
 
-// ── Init (called inline in every page template) ───────────────────────────
-function initPage(role, title) {      // eslint-disable-line no-unused-vars
+// ── Init ──────────────────────────────────────────────────────────────────
+function initPage(role, _title) {   // eslint-disable-line no-unused-vars
   markActiveNav();
+  if (document.getElementById('fb-search')) {
+    initLiveFilter(role);
+  }
 }
 
 function markActiveNav() {
@@ -16,22 +18,20 @@ function markActiveNav() {
   });
 }
 
-// ── Password visibility toggle ────────────────────────────────────────────
-function togglePw() {                 // eslint-disable-line no-unused-vars
+// ── Password toggle ───────────────────────────────────────────────────────
+function togglePw() {               // eslint-disable-line no-unused-vars
   const inp = document.getElementById('f-pass');
   if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
 }
 
-// ── Login form (login.html) ───────────────────────────────────────────────
+// ── Login form ────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('login-form');
   if (!form) return;
-
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const errBox = document.getElementById('err-box');
     errBox.style.display = 'none';
-
     try {
       const res = await fetch('/login', {
         method:  'POST',
@@ -40,14 +40,10 @@ document.addEventListener('DOMContentLoaded', () => {
                + `&password=${encodeURIComponent(document.getElementById('f-pass').value)}`,
       });
       const d = await res.json();
-      if (d.ok) {
-        location.href = '/products';
-      } else {
-        errBox.textContent   = d.error || 'Ошибка входа';
-        errBox.style.display = 'block';
-      }
+      if (d.ok) { location.href = '/products'; }
+      else { errBox.textContent = d.error || 'Ошибка входа'; errBox.style.display = 'block'; }
     } catch {
-      errBox.textContent   = 'Ошибка соединения с сервером';
+      errBox.textContent = 'Ошибка соединения с сервером';
       errBox.style.display = 'block';
     }
   });
@@ -67,20 +63,18 @@ function openModal(id) {
   const el = document.getElementById(id);
   if (el) { el.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
 }
-function closeModal(id) {             // eslint-disable-line no-unused-vars
+function closeModal(id) {           // eslint-disable-line no-unused-vars
   const el = document.getElementById(id);
   if (el) { el.style.display = 'none'; document.body.style.overflow = ''; }
 }
 
-// HTML-escape for use inside JS-generated markup
+// ── HTML escape ───────────────────────────────────────────────────────────
 function esc(s) {
   if (s == null) return '';
-  return String(s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Build <option> string from array
 function makeOpts(arr, selected) {
   return arr.map(v =>
     `<option value="${esc(v)}"${v === selected ? ' selected' : ''}>${esc(v)}</option>`
@@ -88,15 +82,115 @@ function makeOpts(arr, selected) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-//  PRODUCT MODAL
+//  LIVE FILTER ENGINE
+//  ─────────────────────────────────────────────────────────────────────────
+//  Strategy: fetch all products as JSON once on page load; keep a master
+//  array in memory; on every control event run filter+sort in <1 ms and
+//  rebuild only the <tbody> innerHTML.  Zero server round-trips.
 // ══════════════════════════════════════════════════════════════════════════
 
-async function openProductModal(productId) {  // eslint-disable-line no-unused-vars
+let _allProducts = [];   // full dataset, never mutated after load
+let _canEdit     = false;
+
+async function initLiveFilter(role) {
+  _canEdit = (role === 'Администратор');
+
+  // Загружаем все товары один раз
+  _allProducts = await apiFetch('/api/products');
+
+  // Кнопка сброса
+  document.getElementById('fb-reset').addEventListener('click', () => {
+    document.getElementById('fb-search').value   = '';
+    document.getElementById('fb-category').value = '';
+    document.getElementById('fb-supplier').value = '';
+    document.getElementById('fb-sort').value     = '';
+  });
+
+  // Опрашиваем поля каждые 300 мс — работает без Enter и без событий
+  setInterval(applyFilter, 2000);
+
+  applyFilter();
+}
+
+function applyFilter() {
+  const needle   = document.getElementById('fb-search').value.trim().toLowerCase();
+  const cat      = document.getElementById('fb-category').value;
+  const supplier = document.getElementById('fb-supplier').value;
+  const sort     = document.getElementById('fb-sort').value;
+
+  // ── 1. Filter ──────────────────────────────────────────────────────────
+  let visible = _allProducts.filter(p => {
+    // Search across ALL text fields simultaneously
+    if (needle) {
+      const hit = p.product_name.includes(needle)
+               || p.article.includes(needle)
+               || p.category_name.includes(needle)
+               || p.supplier_name.includes(needle)
+               || p.manufacturer_name.includes(needle)
+               || p.description.includes(needle)
+               || p.unit.includes(needle);
+      if (!hit) return false;
+    }
+    // Category dropdown — exact match, empty = all
+    if (cat      && p.category_exact  !== cat)      return false;
+    // Supplier dropdown — exact match, empty = all
+    if (supplier && p.supplier_exact  !== supplier)  return false;
+    return true;
+  });
+
+  // ── 2. Sort ────────────────────────────────────────────────────────────
+  const sorters = {
+    name_asc:   (a, b) => a.product_name.localeCompare(b.product_name, 'ru'),
+    name_desc:  (a, b) => b.product_name.localeCompare(a.product_name, 'ru'),
+    price_asc:  (a, b) => a.price     - b.price,
+    price_desc: (a, b) => b.price     - a.price,
+    disc_asc:   (a, b) => a.discount  - b.discount,
+    disc_desc:  (a, b) => b.discount  - a.discount,
+    stock_asc:  (a, b) => a.stock_qty - b.stock_qty,
+    stock_desc: (a, b) => b.stock_qty - a.stock_qty,
+  };
+  if (sorters[sort]) visible = [...visible].sort(sorters[sort]);
+
+  // ── 3. Render ──────────────────────────────────────────────────────────
+  renderTable(visible);
+}
+
+function renderTable(products) {
+  const container = document.getElementById('prod-container');
+  if (!container) return;
+
+  if (products.length === 0) {
+    container.innerHTML = '<div class="empty-state">Товары не найдены</div>';
+    return;
+  }
+
+  const rows = products.map(p => (
+    `<tr class="${p.row_cls}" data-id="${p.product_id}">`
+    + `<td class="td-img">`
+    +   `<img src="${p.img_src}" alt="фото" class="prod-img"`
+    +       ` onerror="this.src='/static/images/picture.png'">`
+    +   p.actions
+    + `</td>`
+    + `<td class="td-info">${p.info_html}</td>`
+    + `<td class="td-disc">${p.disc_cell}</td>`
+    + `</tr>`
+  )).join('');
+
+  container.innerHTML =
+    `<table class="prod-table">`
+    + `<tbody>${rows}</tbody>`
+    + `</table>`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  PRODUCT MODAL (add / edit)
+// ══════════════════════════════════════════════════════════════════════════
+
+async function openProductModal(productId) { // eslint-disable-line no-unused-vars
   const overlay = document.getElementById('product-modal');
   if (!overlay) return;
 
   let prod = {}, cats = [], sups = [], mans = [];
-
   if (productId) {
     const d = await apiFetch(`/api/product?id=${productId}`);
     if (d.error) { alert('Ошибка загрузки: ' + d.error); return; }
@@ -160,12 +254,9 @@ async function saveProduct(productId) { // eslint-disable-line no-unused-vars
   const article = document.getElementById('m-article').value.trim();
   const name    = document.getElementById('m-name').value.trim();
   const price   = parseFloat(document.getElementById('m-price').value);
-
   if (!article || !name || isNaN(price)) {
-    alert('Заполните обязательные поля: артикул, наименование, цена');
-    return;
+    alert('Заполните обязательные поля: артикул, наименование, цена'); return;
   }
-
   const data = {
     product_id:        productId,
     article,
@@ -175,18 +266,17 @@ async function saveProduct(productId) { // eslint-disable-line no-unused-vars
     supplier_name:     document.getElementById('m-sup').value,
     unit:              document.getElementById('m-unit').value.trim() || 'шт.',
     price,
-    discount:          parseFloat(document.getElementById('m-disc').value)  || 0,
-    stock_qty:         parseInt(document.getElementById('m-stock').value)   || 0,
-    description:       document.getElementById('m-desc').value.trim()  || null,
-    photo:             document.getElementById('m-photo').value.trim() || null,
+    discount:  parseFloat(document.getElementById('m-disc').value)  || 0,
+    stock_qty: parseInt(document.getElementById('m-stock').value)   || 0,
+    description: document.getElementById('m-desc').value.trim()  || null,
+    photo:       document.getElementById('m-photo').value.trim() || null,
   };
-
   const d = await apiFetch('/api/product', { method: 'POST', body: JSON.stringify(data) });
   if (d.ok) { closeModal('product-modal'); location.reload(); }
   else       alert('Ошибка сохранения: ' + (d.error || 'неизвестно'));
 }
 
-function editProduct(productId) { openProductModal(productId); }  // eslint-disable-line no-unused-vars
+function editProduct(productId)  { openProductModal(productId); }  // eslint-disable-line no-unused-vars
 
 async function deleteProduct(productId) { // eslint-disable-line no-unused-vars
   if (!confirm('Удалить этот товар? Действие необратимо.')) return;
@@ -197,34 +287,28 @@ async function deleteProduct(productId) { // eslint-disable-line no-unused-vars
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-//  ORDER MODAL
+//  ORDER MODAL (add / edit)
 // ══════════════════════════════════════════════════════════════════════════
 
-let _orderItems = [];  // [{article, quantity}]
+let _orderItems = [];
 
-async function openOrderModal(orderId) {  // eslint-disable-line no-unused-vars
+async function openOrderModal(orderId) { // eslint-disable-line no-unused-vars
   const overlay = document.getElementById('order-modal');
   if (!overlay) return;
 
   let order = {}, items = [], users = [], pps = [];
-
   if (orderId) {
     const d = await apiFetch(`/api/order?id=${orderId}`);
     if (d.error) { alert('Ошибка загрузки: ' + d.error); return; }
     order = d.order; items = d.items; users = d.users; pps = d.pickup_points;
   } else {
-    [users, pps] = await Promise.all([
-      apiFetch('/api/users'),
-      apiFetch('/api/pickup_points'),
-    ]);
+    [users, pps] = await Promise.all([apiFetch('/api/users'), apiFetch('/api/pickup_points')]);
   }
-
   _orderItems = items.map(i => ({ article: i.article, quantity: i.quantity }));
 
   const userOpts = users.map(u =>
     `<option value="${u.user_id}"${u.user_id == order.user_id ? ' selected' : ''}>${esc(u.full_name)}</option>`
   ).join('');
-
   const ppOpts = pps.map(p =>
     `<option value="${p.pickup_point_id}"${p.pickup_point_id == order.pickup_point_id ? ' selected' : ''}>${esc(p.address)}</option>`
   ).join('');
@@ -240,16 +324,10 @@ async function openOrderModal(orderId) {  // eslint-disable-line no-unused-vars
       <input id="o-ddate" type="date" value="${esc(order.delivery_date || '')}">
 
       <label>Клиент</label>
-      <select id="o-user">
-        <option value="">— не указан —</option>
-        ${userOpts}
-      </select>
+      <select id="o-user"><option value="">— не указан —</option>${userOpts}</select>
 
       <label>Пункт выдачи</label>
-      <select id="o-pp">
-        <option value="">— не указан —</option>
-        ${ppOpts}
-      </select>
+      <select id="o-pp"><option value="">— не указан —</option>${ppOpts}</select>
 
       <label>Код получения</label>
       <input id="o-code" value="${esc(order.pickup_code || '')}" placeholder="901">
@@ -281,8 +359,7 @@ function renderOrderItems() {
   const list = document.getElementById('order-items-list');
   if (!list) return;
   if (_orderItems.length === 0) {
-    list.innerHTML = '<div class="items-empty">Нет позиций</div>';
-    return;
+    list.innerHTML = '<div class="items-empty">Нет позиций</div>'; return;
   }
   list.innerHTML = _orderItems.map((item, i) => `
     <div class="order-item-row">
@@ -291,19 +368,18 @@ function renderOrderItems() {
       <input class="qty-input" type="number" min="1" value="${item.quantity}"
              oninput="_orderItems[${i}].quantity = parseInt(this.value) || 1">
       <button class="btn-icon btn-del" title="Удалить позицию"
-              onclick="_orderItems.splice(${i}, 1); renderOrderItems()">🗑️</button>
+              onclick="_orderItems.splice(${i},1); renderOrderItems()">🗑️</button>
     </div>`).join('');
 }
 
-function addOrderItem() {             // eslint-disable-line no-unused-vars
+function addOrderItem() {           // eslint-disable-line no-unused-vars
   _orderItems.push({ article: '', quantity: 1 });
   renderOrderItems();
-  // focus the new article field
   const rows = document.querySelectorAll('.order-item-row');
   if (rows.length) rows[rows.length - 1].querySelector('input').focus();
 }
 
-async function saveOrder(orderId) {   // eslint-disable-line no-unused-vars
+async function saveOrder(orderId) { // eslint-disable-line no-unused-vars
   const data = {
     order_id:        orderId,
     order_date:      document.getElementById('o-date').value  || null,
