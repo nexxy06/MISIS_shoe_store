@@ -47,15 +47,17 @@ def session_from_cookie(cookie: str | None) -> dict | None:
 
 # ── Product queries ────────────────────────────────────────────────────────
 _SORT_MAP = {
-    'name_asc':  'p.product_name ASC',
-    'name_desc': 'p.product_name DESC',
-    'price_asc': 'p.price ASC',
-    'price_desc':'p.price DESC',
-    'disc_asc':  'p.discount ASC',
-    'disc_desc': 'p.discount DESC',
+    'name_asc':    'p.product_name ASC',
+    'name_desc':   'p.product_name DESC',
+    'price_asc':   'p.price ASC',
+    'price_desc':  'p.price DESC',
+    'disc_asc':    'p.discount ASC',
+    'disc_desc':   'p.discount DESC',
+    'stock_asc':   'p.stock_qty ASC',
+    'stock_desc':  'p.stock_qty DESC',
 }
 
-def fetch_products(search: str = '', category: str = '', sort: str = '') -> list:
+def fetch_products(search: str = '', category: str = '', sort: str = '', supplier: str = '') -> list:
     conn = get_db()
     sql = """
         SELECT p.*,
@@ -79,6 +81,9 @@ def fetch_products(search: str = '', category: str = '', sort: str = '') -> list
     if category:
         sql += " AND c.category_name = ?"
         params.append(category)
+    if supplier:
+        sql += " AND s.supplier_name = ?"
+        params.append(supplier)
     sql += f" ORDER BY {_SORT_MAP.get(sort, 'p.product_id ASC')}"
     rows = conn.execute(sql, params).fetchall()
     conn.close()
@@ -94,7 +99,14 @@ def fetch_categories() -> list[str]:
 def fetch_suppliers() -> list[str]:
     conn = get_db()
     rows = conn.execute(
-        "SELECT supplier_name FROM supplier ORDER BY supplier_name").fetchall()
+        """
+        SELECT DISTINCT s.supplier_name
+        FROM supplier s
+        JOIN product p ON s.supplier_id = p.supplier_id
+        WHERE s.supplier_name IS NOT NULL AND s.supplier_name != ''
+        ORDER BY s.supplier_name
+        """
+    ).fetchall()
     conn.close()
     return [r['supplier_name'] for r in rows]
 
@@ -436,7 +448,7 @@ def nav_bar_html(sess: dict | None, current: str = '') -> str:
     )
     return f'<nav class="site-nav">{items}</nav>'
 
-def filter_bar_html(search: str, category: str, sort: str) -> str:
+def filter_bar_html(search: str, category: str, sort: str, supplier: str = '') -> str:
     sort_options = [
         ('',          'Без сортировки'),
         ('name_asc',  'Название А→Я'),
@@ -445,11 +457,14 @@ def filter_bar_html(search: str, category: str, sort: str) -> str:
         ('price_desc','Цена ↓'),
         ('disc_asc',  'Скидка ↑'),
         ('disc_desc', 'Скидка ↓'),
+        ('stock_asc', 'На складе ↑'),
+        ('stock_desc','На складе ↓'),
     ]
     sort_html = ''.join(
         f'<option value="{v}" {"selected" if v == sort else ""}>{esc(l)}</option>'
         for v, l in sort_options
     )
+    supplier_html = sel_opts(fetch_suppliers(), supplier, "Все поставщики")
     return (
         f'<form class="filter-bar" method="get" action="/products">'
         f'  <input type="text" name="search" value="{esc(search)}"'
@@ -457,8 +472,9 @@ def filter_bar_html(search: str, category: str, sort: str) -> str:
         f'  <select name="category">'
         f'    {sel_opts(fetch_categories(), category, "Все категории")}'
         f'  </select>'
-        f'  <select name="sort">{sort_html}</select>'
-        f'  <button type="submit" class="btn-primary">🔍 Найти</button>'
-        f'  <a href="/products" class="btn-secondary">✕ Сбросить</a>'
+        f'  <select name="supplier" id="fb-supplier">{supplier_html}</select>'
+        f'  <select name="sort" id="fb-sort">{sort_html}</select>'
+        f'  <button type="submit" class="btn-primary">Найти</button>'
+        f'  <a href="/products" class="btn-secondary" id="fb-reset">✕ Сбросить</a>'
         f'</form>'
     )

@@ -216,12 +216,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
         search   = qs.get('search',   '')
         category = qs.get('category', '')
         sort     = qs.get('sort',     '')
+        supplier = qs.get('supplier', '')
 
-        products = fetch_products(search, category, sort)
+        products = fetch_products(search, category, sort, supplier)
 
         ctx = common_ctx(sess, '/products')
         ctx.update({
-            'filter_bar':     filter_bar_html(search, category, sort) if can_filter else '',
+            'filter_bar':     filter_bar_html(search, category, sort, supplier) if can_filter else '',
             'toolbar':        ('<div class="toolbar"><button class="btn-primary"'
                                ' onclick="openProductModal(null)">＋ Добавить товар</button></div>'
                                if can_edit else ''),

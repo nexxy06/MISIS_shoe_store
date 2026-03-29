@@ -99,14 +99,19 @@ async function initLiveFilter(role) {
   _allProducts = await apiFetch('/api/products');
 
   // Кнопка сброса
-  document.getElementById('fb-reset').addEventListener('click', () => {
-    document.getElementById('fb-search').value   = '';
-    document.getElementById('fb-category').value = '';
-    document.getElementById('fb-supplier').value = '';
-    document.getElementById('fb-sort').value     = '';
-  });
+  const resetBtn = document.getElementById('fb-reset');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('fb-search').value   = '';
+      document.getElementById('fb-category').value = '';
+      document.getElementById('fb-supplier').value = '';
+      document.getElementById('fb-sort').value     = '';
+      applyFilter();
+    });
+  }
 
-  // Опрашиваем поля каждые 300 мс — работает без Enter и без событий
+  // Опрашиваем поля каждые 2 секунды — работает без Enter и без событий
   setInterval(applyFilter, 2000);
 
   applyFilter();
@@ -122,19 +127,19 @@ function applyFilter() {
   let visible = _allProducts.filter(p => {
     // Search across ALL text fields simultaneously
     if (needle) {
-      const hit = p.product_name.includes(needle)
-               || p.article.includes(needle)
-               || p.category_name.includes(needle)
-               || p.supplier_name.includes(needle)
-               || p.manufacturer_name.includes(needle)
-               || p.description.includes(needle)
-               || p.unit.includes(needle);
+      const hit = (p.product_name || '').toLowerCase().includes(needle)
+               || (p.article || '').toLowerCase().includes(needle)
+               || (p.category_name || '').toLowerCase().includes(needle)
+               || (p.supplier_name || '').toLowerCase().includes(needle)
+               || (p.manufacturer_name || '').toLowerCase().includes(needle)
+               || (p.description || '').toLowerCase().includes(needle)
+               || (p.unit || '').toLowerCase().includes(needle);
       if (!hit) return false;
     }
     // Category dropdown — exact match, empty = all
-    if (cat      && p.category_exact  !== cat)      return false;
+    if (cat && cat !== '' && p.category_name !== cat) return false;
     // Supplier dropdown — exact match, empty = all
-    if (supplier && p.supplier_exact  !== supplier)  return false;
+    if (supplier && supplier !== '' && p.supplier_name !== supplier) return false;
     return true;
   });
 
