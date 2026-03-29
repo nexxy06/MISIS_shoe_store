@@ -13,7 +13,6 @@ Run from any directory:
 """
 
 import http.server
-import socketserver
 import json
 import mimetypes
 import os
@@ -350,5 +349,7 @@ if __name__ == '__main__':
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
     print(f'Сервер запущен: http://localhost:{PORT}')
-    with socketserver.TCPServer(('', PORT), Handler) as httpd:
-        httpd.serve_forever()
+    # TODO: Add your server start logic here (socketserver removed)
+
+# Запуск обычного http-сервера
+    http.server.test(HandlerClass=Handler, port=PORT)
