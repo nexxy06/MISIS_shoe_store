@@ -9,14 +9,14 @@
 
 :root {
   --font:      'Times New Roman', Times, serif;
-  --orange:    #ff6600;
-  --orange-bg: #ff660020;
+  --orange:    #000000;
+  --orange-bg: #7FFF00;
   --accent:    #00FA9A;
   --green-row: #2E8B57;
   --blue-row:  #cce5ff;
   --text:      #1a1a1a;
   --muted:     #666;
-  --border:    #e0e0e0;
+  --border:    #ffffff;
   --radius:    8px;
   --shadow-sm: 0 2px 8px rgba(0,0,0,.08);
   --shadow-md: 0 6px 24px rgba(0,0,0,.14);
@@ -84,7 +84,7 @@ button { font-family: var(--font); cursor: pointer; }
   align-items: center;
   gap: .5rem;
   background: var(--orange-bg);
-  border: 1px solid #ffd0a0;
+  border: 1px solid #7FFF00;
   border-radius: 20px;
   padding: .3rem .85rem;
   font-size: .88rem;
@@ -120,7 +120,7 @@ button { font-family: var(--font); cursor: pointer; }
   gap: .25rem;
   padding: .4rem 1.5rem;
   background: var(--orange-bg);
-  border-bottom: 1px solid #ffd0a0;
+  border-bottom: 1px solid #7FFF00;
 }
 .nav-link {
   text-decoration: none;
@@ -189,8 +189,8 @@ button { font-family: var(--font); cursor: pointer; }
   line-height: 1;
   transition: background .13s;
 }
-.btn-edit:hover { background: #fff3cd; }
-.btn-del:hover  { background: #ffd0d0; }
+.btn-edit:hover { background: #ffffff; }
+.btn-del:hover  { background: #7FFF00; }
 
 /* ── Toolbar ──────────────────────────────────────────────── */
 .toolbar { margin-bottom: 1rem; }
@@ -283,7 +283,7 @@ button { font-family: var(--font); cursor: pointer; }
 
 .error-msg {
   background: #fff0f0;
-  border: 1px solid #fbb;
+  border: 1px solid #7FFF00;
   border-radius: 6px;
   padding: .5rem .8rem;
   color: #c00;
@@ -297,7 +297,7 @@ button { font-family: var(--font); cursor: pointer; }
   flex-wrap: wrap;
   gap: .55rem;
   background: var(--orange-bg);
-  border: 1px solid #ffd0a0;
+  border: 1px solid #7FFF00;
   border-radius: 10px;
   padding: .8rem 1rem;
   margin-bottom: 1rem;
@@ -372,7 +372,7 @@ button { font-family: var(--font); cursor: pointer; }
 .row-big-discount td { background: var(--green-row) !important; color: #fff !important; }
 .row-big-discount .prod-cat { color: #c8ffde !important; }
 .row-big-discount .disc-badge { background: #fff !important; color: var(--green-row) !important; }
-.row-big-discount .price-old { color: #ffd0d0 !important; }
+.row-big-discount .price-old { color: #7FFF00 !important; }
 .row-big-discount .price-new { color: #fff !important; }
 .row-big-discount .prod-detail { color: #eaffee !important; }
 
