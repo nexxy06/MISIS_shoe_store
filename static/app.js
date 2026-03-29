@@ -211,7 +211,7 @@ async function openProductModal(productId) { // eslint-disable-line no-unused-va
 
   overlay.innerHTML = `
     <div class="modal-box" onclick="event.stopPropagation()">
-      <h3>${productId ? '✏️ Редактировать товар' : '＋ Добавить товар'}</h3>
+      <h3>${productId ? 'Редактировать товар' : '＋ Добавить товар'}</h3>
 
       <form id="product-form">
         <label>Артикул *</label>
@@ -322,7 +322,7 @@ async function openOrderModal(orderId) { // eslint-disable-line no-unused-vars
 
   overlay.innerHTML = `
     <div class="modal-box" onclick="event.stopPropagation()">
-      <h3>${orderId ? '✏️ Редактировать заказ' : '＋ Новый заказ'}</h3>
+      <h3>${orderId ? 'Редактировать заказ' : '＋ Новый заказ'}</h3>
 
       <label>Дата заказа</label>
       <input id="o-date"  type="date" value="${esc(order.order_date    || '')}">
@@ -353,7 +353,7 @@ async function openOrderModal(orderId) { // eslint-disable-line no-unused-vars
 
       <div class="modal-footer">
         <button class="btn-secondary" onclick="closeModal('order-modal')">Отмена</button>
-        <button class="btn-primary"   onclick="saveOrder(${orderId || 'null'})">💾 Сохранить</button>
+        <button class="btn-primary"   onclick="saveOrder(${orderId || 'null'})">Сохранить</button>
       </div>
     </div>`;
 
