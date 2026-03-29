@@ -110,6 +110,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def body_json(self) -> dict:
         return json.loads(self.body_str())
 
+    def parse_multipart(self):
+        ctype = self.headers.get('Content-Type', '')
+        if 'multipart/form-data' not in ctype:
+            return None, None
+        import cgi
+        env = {'REQUEST_METHOD': 'POST'}
+        fs = cgi.FieldStorage(fp=self.rfile, headers=self.headers, environ=env, keep_blank_values=True)
+        return fs, ctype
+
     def do_GET(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
@@ -145,6 +154,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
         path = urllib.parse.urlparse(self.path).path
         sess = self.sess()
 
+        if path == "/api/product":
+            ctype = self.headers.get('Content-Type', '')
+            if 'multipart/form-data' in ctype:
+                self.api_save_product_multipart(sess)
+                return
         routes = {
             "/login": lambda: self.handle_login(),
             "/api/product": lambda: self.api_save_product(sess),
@@ -157,6 +171,50 @@ class Handler(http.server.BaseHTTPRequestHandler):
             handler()
         else:
             self.send_json({"error": "Not found"}, 404)
+
+    def api_save_product_multipart(self, sess):
+        if not sess or sess["role"] != "Администратор":
+            self.send_json({"error": "forbidden"}, 403)
+            return
+        import shutil
+        import uuid
+        fs, _ = self.parse_multipart()
+        if not fs:
+            self.send_json({"error": "bad form"}, 400)
+            return
+        data = {k: fs.getvalue(k) for k in fs.keys() if k != 'photo_file'}
+        # Обработка файла
+        photo_file = fs['photo_file'] if 'photo_file' in fs else None
+        static_img_dir = os.path.join(STATIC, 'images')
+        os.makedirs(static_img_dir, exist_ok=True)
+        old_photo = data.get('old_photo')
+        new_photo_name = None
+        if photo_file is not None and getattr(photo_file, 'filename', None):
+            ext = os.path.splitext(photo_file.filename)[1].lower()
+            if ext not in ['.jpg', '.jpeg', '.png', '.gif']:
+                self.send_json({"error": "Недопустимый формат файла"}, 400)
+                return
+            new_photo_name = f"product_{uuid.uuid4().hex}{ext}"
+            dest_path = os.path.join(static_img_dir, new_photo_name)
+            with open(dest_path, 'wb') as f:
+                shutil.copyfileobj(photo_file.file, f)
+            data['photo'] = new_photo_name
+            # Удалить старое фото, если оно есть и отличается
+            if old_photo and old_photo not in ('', 'None') and old_photo != new_photo_name:
+                old_path = os.path.join(static_img_dir, old_photo)
+                if os.path.isfile(old_path):
+                    try:
+                        os.remove(old_path)
+                    except Exception:
+                        pass
+        else:
+            # Если не загружено новое фото, оставить старое
+            data['photo'] = old_photo if old_photo not in ('', 'None') else None
+        try:
+            save_product(data)
+            self.send_json({"ok": True})
+        except Exception as e:
+            self.send_json({"error": str(e)}, 400)
 
     def serve_static(self, rel: str) -> None:
         rel = rel.lstrip("/")

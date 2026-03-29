@@ -208,75 +208,77 @@ async function openProductModal(productId) { // eslint-disable-line no-unused-va
     ]);
   }
 
+
   overlay.innerHTML = `
     <div class="modal-box" onclick="event.stopPropagation()">
       <h3>${productId ? '✏️ Редактировать товар' : '＋ Добавить товар'}</h3>
 
-      <label>Артикул *</label>
-      <input id="m-article" value="${esc(prod.article || '')}" placeholder="А112Т4" required>
+      <form id="product-form">
+        <label>Артикул *</label>
+        <input id="m-article" name="article" value="${esc(prod.article || '')}" placeholder="А112Т4" required>
 
-      <label>Наименование *</label>
-      <input id="m-name" value="${esc(prod.product_name || '')}" placeholder="Ботинки" required>
+        <label>Наименование *</label>
+        <input id="m-name" name="product_name" value="${esc(prod.product_name || '')}" placeholder="Ботинки" required>
 
-      <label>Категория</label>
-      <select id="m-cat">${makeOpts(cats, prod.category_name)}</select>
+        <label>Категория</label>
+        <select id="m-cat" name="category_name">${makeOpts(cats, prod.category_name)}</select>
 
-      <label>Производитель</label>
-      <select id="m-man">${makeOpts(mans, prod.manufacturer_name)}</select>
+        <label>Производитель</label>
+        <select id="m-man" name="manufacturer_name">${makeOpts(mans, prod.manufacturer_name)}</select>
 
-      <label>Поставщик</label>
-      <select id="m-sup">${makeOpts(sups, prod.supplier_name)}</select>
+        <label>Поставщик</label>
+        <select id="m-sup" name="supplier_name">${makeOpts(sups, prod.supplier_name)}</select>
 
-      <label>Единица измерения</label>
-      <input id="m-unit" value="${esc(prod.unit || 'шт.')}">
+        <label>Единица измерения</label>
+        <input id="m-unit" name="unit" value="${esc(prod.unit || 'шт.')}" >
 
-      <label>Цена (₽) *</label>
-      <input id="m-price" type="number" min="0" step="0.01" value="${prod.price ?? ''}">
+        <label>Цена (₽) *</label>
+        <input id="m-price" name="price" type="number" min="0" step="0.01" value="${prod.price ?? ''}">
 
-      <label>Скидка (%)</label>
-      <input id="m-disc" type="number" min="0" max="100" step="0.1" value="${prod.discount ?? 0}">
+        <label>Скидка (%)</label>
+        <input id="m-disc" name="discount" type="number" min="0" max="100" step="0.1" value="${prod.discount ?? 0}">
 
-      <label>Количество на складе</label>
-      <input id="m-stock" type="number" min="0" value="${prod.stock_qty ?? 0}">
+        <label>Количество на складе</label>
+        <input id="m-stock" name="stock_qty" type="number" min="0" value="${prod.stock_qty ?? 0}">
 
-      <label>Описание</label>
-      <textarea id="m-desc" rows="3">${esc(prod.description || '')}</textarea>
+        <label>Описание</label>
+        <textarea id="m-desc" name="description" rows="3">${esc(prod.description || '')}</textarea>
 
-      <label>Имя файла фото (например: 1.jpg)</label>
-      <input id="m-photo" value="${esc(prod.photo || '')}" placeholder="1.jpg">
+        <label>Фото (jpg/png, макс. 2 МБ)</label>
+        <input id="m-photo-file" name="photo_file" type="file" accept="image/*">
+        <div style="font-size:0.9em;color:#888;">${prod.photo ? `Текущее фото: ${esc(prod.photo)}` : ''}</div>
 
-      <div class="modal-footer">
-        <button class="btn-secondary" onclick="closeModal('product-modal')">Отмена</button>
-        <button class="btn-primary"   onclick="saveProduct(${productId || 'null'})">💾 Сохранить</button>
-      </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('product-modal')">Отмена</button>
+          <button type="submit" class="btn-primary">💾 Сохранить</button>
+        </div>
+      </form>
     </div>`;
 
   overlay.onclick = (e) => { if (e.target === overlay) closeModal('product-modal'); };
   openModal('product-modal');
+
+  document.getElementById('product-form').onsubmit = async function(e) {
+    e.preventDefault();
+    await saveProduct(productId, prod.photo || null);
+  };
 }
 
-async function saveProduct(productId) { // eslint-disable-line no-unused-vars
-  const article = document.getElementById('m-article').value.trim();
-  const name    = document.getElementById('m-name').value.trim();
-  const price   = parseFloat(document.getElementById('m-price').value);
+async function saveProduct(productId, oldPhoto) { // eslint-disable-line no-unused-vars
+  const form = document.getElementById('product-form');
+  const article = form.article.value.trim();
+  const name    = form.product_name.value.trim();
+  const price   = parseFloat(form.price.value);
   if (!article || !name || isNaN(price)) {
     alert('Заполните обязательные поля: артикул, наименование, цена'); return;
   }
-  const data = {
-    product_id:        productId,
-    article,
-    product_name:      name,
-    category_name:     document.getElementById('m-cat').value,
-    manufacturer_name: document.getElementById('m-man').value,
-    supplier_name:     document.getElementById('m-sup').value,
-    unit:              document.getElementById('m-unit').value.trim() || 'шт.',
-    price,
-    discount:  parseFloat(document.getElementById('m-disc').value)  || 0,
-    stock_qty: parseInt(document.getElementById('m-stock').value)   || 0,
-    description: document.getElementById('m-desc').value.trim()  || null,
-    photo:       document.getElementById('m-photo').value.trim() || null,
-  };
-  const d = await apiFetch('/api/product', { method: 'POST', body: JSON.stringify(data) });
+  const fd = new FormData(form);
+  fd.append('product_id', productId);
+  fd.append('old_photo', oldPhoto || '');
+  // Если файл не выбран, не отправлять photo_file
+  if (!form.photo_file.files.length) fd.delete('photo_file');
+  const res = await fetch('/api/product', { method: 'POST', body: fd });
+  const d = await res.json();
   if (d.ok) { closeModal('product-modal'); location.reload(); }
   else       alert('Ошибка сохранения: ' + (d.error || 'неизвестно'));
 }
