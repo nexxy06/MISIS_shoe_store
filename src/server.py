@@ -30,7 +30,6 @@ from database import (
     fetch_pickup_points,
     # HTML helpers
     esc,
-    sel_opts,
     products_table_html,
     user_badge_html,
     nav_bar_html,
@@ -118,7 +117,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         sess = self.sess()
 
         if path.startswith("/static/"):
-            self.serve_static(path[len("/static/") :])
+            self.serve_static(path[len("/static/"):])
             return
 
         routes = {
@@ -274,10 +273,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
             rows_html += (
                 f"<tr>"
                 f'<td class="td-num">{r["order_number"]}</td>'
-                f'<td>{esc(r["order_date"]    or "—")}</td>'
+                f'<td>{esc(r["order_date"] or "—")}</td>'
                 f'<td>{esc(r["delivery_date"] or "—")}</td>'
-                f'<td class="td-addr">{esc(r["address"]   or "—")}</td>'
-                f'<td>{esc(r["full_name"]     or "—")}</td>'
+                f'<td class="td-addr">{esc(r["address"] or "—")}</td>'
+                f'<td>{esc(r["full_name"] or "—")}</td>'
                 f'<td class="td-items">{esc(r["items_str"] or "—")}</td>'
                 f'<td class="td-code">{esc(r["pickup_code"] or "—")}</td>'
                 f'<td><span class="status-badge {sc}">{esc(r["status"])}</span></td>'
