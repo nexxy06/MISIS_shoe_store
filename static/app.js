@@ -1,9 +1,5 @@
 'use strict';
-/* ═══════════════════════════════════════════════════════════════════════════
-   ООО «Обувь» — Frontend JavaScript
-   ═══════════════════════════════════════════════════════════════════════════ */
 
-// ── Init ──────────────────────────────────────────────────────────────────
 function initPage(role, _title) {   // eslint-disable-line no-unused-vars
   markActiveNav();
   if (document.getElementById('fb-search')) {
@@ -11,6 +7,7 @@ function initPage(role, _title) {   // eslint-disable-line no-unused-vars
   }
 }
 
+// Подсветка активного пункта меню
 function markActiveNav() {
   const path = location.pathname;
   document.querySelectorAll('.nav-link').forEach(a => {
@@ -18,13 +15,12 @@ function markActiveNav() {
   });
 }
 
-// ── Password toggle ───────────────────────────────────────────────────────
 function togglePw() {               // eslint-disable-line no-unused-vars
   const inp = document.getElementById('f-pass');
   if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
 }
 
-// ── Login form ────────────────────────────────────────────────────────────
+// Логин форма
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('login-form');
   if (!form) return;
@@ -49,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// ── Generic API fetch ─────────────────────────────────────────────────────
+// Универсальный fetch для API
 async function apiFetch(url, opts = {}) {
   const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
@@ -58,7 +54,7 @@ async function apiFetch(url, opts = {}) {
   return res.json();
 }
 
-// ── Modal helpers ─────────────────────────────────────────────────────────
+// Модальные окна
 function openModal(id) {
   const el = document.getElementById(id);
   if (el) { el.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
@@ -68,7 +64,7 @@ function closeModal(id) {           // eslint-disable-line no-unused-vars
   if (el) { el.style.display = 'none'; document.body.style.overflow = ''; }
 }
 
-// ── HTML escape ───────────────────────────────────────────────────────────
+// Экранирование HTML
 function esc(s) {
   if (s == null) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -81,24 +77,21 @@ function makeOpts(arr, selected) {
   ).join('');
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-//  LIVE FILTER ENGINE
-//  ─────────────────────────────────────────────────────────────────────────
-//  Strategy: fetch all products as JSON once on page load; keep a master
-//  array in memory; on every control event run filter+sort in <1 ms and
-//  rebuild only the <tbody> innerHTML.  Zero server round-trips.
-// ══════════════════════════════════════════════════════════════════════════
 
-let _allProducts = [];   // full dataset, never mutated after load
+// Фильтрация и сортировка товаров (live)
+let _allProducts = [];
 let _canEdit     = false;
 
 async function initLiveFilter(role) {
   _canEdit = (role === 'Администратор');
-
-  // Загружаем все товары один раз
   _allProducts = await apiFetch('/api/products');
-
-  // Кнопка сброса
+  const filterIds = ['fb-search', 'fb-category', 'fb-supplier', 'fb-sort'];
+  filterIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input',  applyFilter);
+    el.addEventListener('change', applyFilter);
+  });
   const resetBtn = document.getElementById('fb-reset');
   if (resetBtn) {
     resetBtn.addEventListener('click', (e) => {
@@ -110,10 +103,6 @@ async function initLiveFilter(role) {
       applyFilter();
     });
   }
-
-  // Опрашиваем поля каждые 2 секунды — работает без Enter и без событий
-  setInterval(applyFilter, 2000);
-
   applyFilter();
 }
 
@@ -156,7 +145,6 @@ function applyFilter() {
   };
   if (sorters[sort]) visible = [...visible].sort(sorters[sort]);
 
-  // ── 3. Render ──────────────────────────────────────────────────────────
   renderTable(visible);
 }
 
@@ -187,10 +175,8 @@ function renderTable(products) {
     + `</table>`;
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-//  PRODUCT MODAL (add / edit)
-// ══════════════════════════════════════════════════════════════════════════
 
+// Модалка товара (добавить/редактировать)
 async function openProductModal(productId) { // eslint-disable-line no-unused-vars
   const overlay = document.getElementById('product-modal');
   if (!overlay) return;
@@ -293,10 +279,8 @@ async function deleteProduct(productId) { // eslint-disable-line no-unused-vars
   else      alert('Ошибка удаления: ' + (d.error || 'неизвестно'));
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-//  ORDER MODAL (add / edit)
-// ══════════════════════════════════════════════════════════════════════════
 
+// Модалка заказа (добавить/редактировать)
 let _orderItems = [];
 
 async function openOrderModal(orderId) { // eslint-disable-line no-unused-vars

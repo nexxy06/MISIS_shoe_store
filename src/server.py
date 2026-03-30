@@ -135,6 +135,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             "/logout": lambda: self.do_logout(),
             "/products": lambda: self.pg_products(sess, qs),
             "/orders": lambda: self.pg_orders(sess),
+            "/api/products": lambda: self.api_get_products(sess),
             "/api/product": lambda: self.api_get_product(sess, qs),
             "/api/categories": lambda: self.send_json(fetch_categories()),
             "/api/suppliers": lambda: self.send_json(fetch_suppliers()),
@@ -356,6 +357,95 @@ class Handler(http.server.BaseHTTPRequestHandler):
             }
         )
         self.send_html(render("orders.html", **ctx))
+
+    def api_get_products(self, sess) -> None:
+        """Возвращает все товары в JSON для живой фильтрации на фронтенде."""
+        if not sess:
+            self.send_json({"error": "forbidden"}, 403)
+            return
+        can_edit = sess["role"] == "Администратор"
+        rows = fetch_products()
+        products = []
+        for p in rows:
+            discount = float(p["discount"] or 0)
+            price = float(p["price"])
+            stock = int(p["stock_qty"])
+            final_p = round(price * (1 - discount / 100), 2)
+
+            if stock == 0:
+                row_cls = "row-no-stock"
+            elif discount > 15:
+                row_cls = "row-big-discount"
+            else:
+                row_cls = ""
+
+            photo = p["photo"]
+            img_src = (
+                f"/static/images/{photo}"
+                if photo and photo not in ("None", "")
+                else "/static/images/picture.png"
+            )
+
+            if discount > 0:
+                price_html = (
+                    f'<span class="price-old">{price:,.2f}\u00a0₽</span>'
+                    f'<span class="price-new">{final_p:,.2f}\u00a0₽</span>'
+                )
+            else:
+                price_html = f'<span class="price-plain">{price:,.2f}\u00a0₽</span>'
+
+            disc_cell = (
+                f'<span class="disc-badge">{discount:.0f}%</span>'
+                if discount > 0
+                else '<span class="no-disc">—</span>'
+            )
+
+            actions = ""
+            if can_edit:
+                actions = (
+                    f'<div class="action-btns">'
+                    f'<button class="btn-icon btn-edit" title="Редактировать"'
+                    f' onclick="editProduct({p["product_id"]})">✏️</button>'
+                    f'<button class="btn-icon btn-del" title="Удалить"'
+                    f' onclick="deleteProduct({p["product_id"]})">🗑️</button>'
+                    f'</div>'
+                )
+
+            info_html = (
+                f'<div class="prod-info">'
+                f'  <div class="prod-title">'
+                f'    <span class="prod-cat">{esc(p["category_name"])}</span>'
+                f'    <span class="prod-sep"> | </span>'
+                f'    <strong class="prod-name">{esc(p["product_name"])}</strong>'
+                f'  </div>'
+                f'  <div class="prod-detail">Описание товара: {esc(p["description"]) or "—"}</div>'
+                f'  <div class="prod-detail">Производитель: {esc(p["manufacturer_name"]) or "—"}</div>'
+                f'  <div class="prod-detail">Поставщик: {esc(p["supplier_name"]) or "—"}</div>'
+                f'  <div class="prod-detail prod-price">Цена: {price_html}</div>'
+                f'  <div class="prod-detail">Единица измерения: {esc(p["unit"])}</div>'
+                f'  <div class="prod-detail">Количество на складе: {stock}</div>'
+                f'</div>'
+            )
+
+            products.append({
+                "product_id":       p["product_id"],
+                "product_name":     p["product_name"] or "",
+                "article":          p["article"] or "",
+                "category_name":    p["category_name"] or "",
+                "supplier_name":    p["supplier_name"] or "",
+                "manufacturer_name": p["manufacturer_name"] or "",
+                "description":      p["description"] or "",
+                "unit":             p["unit"] or "",
+                "price":            price,
+                "discount":         discount,
+                "stock_qty":        stock,
+                "row_cls":          row_cls,
+                "img_src":          img_src,
+                "actions":          actions,
+                "info_html":        info_html,
+                "disc_cell":        disc_cell,
+            })
+        self.send_json(products)
 
     def api_get_product(self, sess, qs: dict) -> None:
         pid = qs.get("id")

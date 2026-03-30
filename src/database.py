@@ -546,9 +546,9 @@ def filter_bar_html(search: str, category: str, sort: str, supplier: str = "") -
     supplier_html = sel_opts(fetch_suppliers(), supplier, "Все поставщики")
     return (
         f'<form class="filter-bar" method="get" action="/products">'
-        f'  <input type="text" name="search" value="{esc(search)}"'
+        f'  <input id="fb-search" type="text" name="search" value="{esc(search)}"'
         f'         placeholder="Поиск: название, артикул, категория…">'
-        f'  <select name="category">'
+        f'  <select id="fb-category" name="category">'
         f'    {sel_opts(fetch_categories(), category, "Все категории")}'
         f"  </select>"
         f'  <select name="supplier" id="fb-supplier">{supplier_html}</select>'
