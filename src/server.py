@@ -1,7 +1,3 @@
-"""
-server.py — HTTP сервер для ООО «Обувь»
-"""
-
 import http.server
 import json
 import mimetypes
@@ -28,7 +24,6 @@ from database import (
     delete_order,
     fetch_users,
     fetch_pickup_points,
-    # HTML helpers
     esc,
     products_table_html,
     user_badge_html,
@@ -47,7 +42,6 @@ def load_template(name: str) -> str:
 
 
 def render(template_name: str, **ctx) -> str:
-    """Load a template and substitute {{key}} placeholders."""
     html = load_template(template_name)
     for key, val in ctx.items():
         html = html.replace("{{" + key + "}}", str(val) if val is not None else "")
@@ -55,7 +49,6 @@ def render(template_name: str, **ctx) -> str:
 
 
 def common_ctx(sess, current_path: str = "") -> dict:
-    """Context keys shared by every authenticated page."""
     return {
         "user_badge": user_badge_html(sess),
         "nav_bar": nav_bar_html(sess, current_path),
@@ -66,7 +59,7 @@ def common_ctx(sess, current_path: str = "") -> dict:
 
 class Handler(http.server.BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
-        pass  # silence default access log
+        pass 
 
     def send_html(
         self, html: str, status: int = 200, set_cookie: str | None = None
@@ -209,7 +202,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     except Exception:
                         pass
         else:
-            # Если не загружено новое фото, оставить старое
+
             data['photo'] = old_photo if old_photo not in ('', 'None') else None
         try:
             save_product(data)
@@ -220,7 +213,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def serve_static(self, rel: str) -> None:
         rel = rel.lstrip("/")
         full = os.path.normpath(os.path.join(STATIC, rel))
-        # Security: reject path traversal
         if not full.startswith(
             os.path.normpath(STATIC) + os.sep
         ) and full != os.path.normpath(STATIC):
@@ -359,7 +351,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_html(render("orders.html", **ctx))
 
     def api_get_products(self, sess) -> None:
-        """Возвращает все товары в JSON для живой фильтрации на фронтенде."""
+        """Возвращает все товары в JSON"""
         if not sess:
             self.send_json({"error": "forbidden"}, 403)
             return
@@ -529,13 +521,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
 PORT = 8000
 
 if __name__ == "__main__":
-    # Add src/ to path so `import database` works when run from any cwd
     import sys
 
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
     print(f"Сервер запущен: http://localhost:{PORT}")
-    # TODO: Add your server start logic here (socketserver removed)
-
-    # Запуск обычного http-сервера
     http.server.test(HandlerClass=Handler, port=PORT)

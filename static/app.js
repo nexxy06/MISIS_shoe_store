@@ -1,13 +1,12 @@
 'use strict';
 
-function initPage(role, _title) {   // eslint-disable-line no-unused-vars
+function initPage(role, _title) {
   markActiveNav();
   if (document.getElementById('fb-search')) {
     initLiveFilter(role);
   }
 }
 
-// Подсветка активного пункта меню
 function markActiveNav() {
   const path = location.pathname;
   document.querySelectorAll('.nav-link').forEach(a => {
@@ -15,12 +14,11 @@ function markActiveNav() {
   });
 }
 
-function togglePw() {               // eslint-disable-line no-unused-vars
+function togglePw() {          
   const inp = document.getElementById('f-pass');
   if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
 }
 
-// Логин форма
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('login-form');
   if (!form) return;
@@ -45,7 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// Универсальный fetch для API
 async function apiFetch(url, opts = {}) {
   const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
@@ -54,17 +51,15 @@ async function apiFetch(url, opts = {}) {
   return res.json();
 }
 
-// Модальные окна
 function openModal(id) {
   const el = document.getElementById(id);
   if (el) { el.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
 }
-function closeModal(id) {           // eslint-disable-line no-unused-vars
+function closeModal(id) {
   const el = document.getElementById(id);
   if (el) { el.style.display = 'none'; document.body.style.overflow = ''; }
 }
 
-// Экранирование HTML
 function esc(s) {
   if (s == null) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -78,7 +73,7 @@ function makeOpts(arr, selected) {
 }
 
 
-// Фильтрация и сортировка товаров (live)
+// Фильтрация и сортировка товаров
 let _allProducts = [];
 let _canEdit     = false;
 
@@ -112,9 +107,7 @@ function applyFilter() {
   const supplier = document.getElementById('fb-supplier').value;
   const sort     = document.getElementById('fb-sort').value;
 
-  // ── 1. Filter ──────────────────────────────────────────────────────────
   let visible = _allProducts.filter(p => {
-    // Search across ALL text fields simultaneously
     if (needle) {
       const hit = (p.product_name || '').toLowerCase().includes(needle)
                || (p.article || '').toLowerCase().includes(needle)
@@ -125,14 +118,11 @@ function applyFilter() {
                || (p.unit || '').toLowerCase().includes(needle);
       if (!hit) return false;
     }
-    // Category dropdown — exact match, empty = all
     if (cat && cat !== '' && p.category_name !== cat) return false;
-    // Supplier dropdown — exact match, empty = all
     if (supplier && supplier !== '' && p.supplier_name !== supplier) return false;
     return true;
   });
 
-  // ── 2. Sort ────────────────────────────────────────────────────────────
   const sorters = {
     name_asc:   (a, b) => a.product_name.localeCompare(b.product_name, 'ru'),
     name_desc:  (a, b) => b.product_name.localeCompare(a.product_name, 'ru'),
@@ -176,8 +166,8 @@ function renderTable(products) {
 }
 
 
-// Модалка товара (добавить/редактировать)
-async function openProductModal(productId) { // eslint-disable-line no-unused-vars
+// добавить/редактировать
+async function openProductModal(productId) {
   const overlay = document.getElementById('product-modal');
   if (!overlay) return;
 
@@ -250,7 +240,7 @@ async function openProductModal(productId) { // eslint-disable-line no-unused-va
   };
 }
 
-async function saveProduct(productId, oldPhoto) { // eslint-disable-line no-unused-vars
+async function saveProduct(productId, oldPhoto) { 
   const form = document.getElementById('product-form');
   const article = form.article.value.trim();
   const name    = form.product_name.value.trim();
@@ -269,9 +259,9 @@ async function saveProduct(productId, oldPhoto) { // eslint-disable-line no-unus
   else       alert('Ошибка сохранения: ' + (d.error || 'неизвестно'));
 }
 
-function editProduct(productId)  { openProductModal(productId); }  // eslint-disable-line no-unused-vars
+function editProduct(productId)  { openProductModal(productId); }
 
-async function deleteProduct(productId) { // eslint-disable-line no-unused-vars
+async function deleteProduct(productId) {
   if (!confirm('Удалить этот товар? Действие необратимо.')) return;
   const d = await apiFetch('/api/product/delete',
     { method: 'POST', body: JSON.stringify({ product_id: productId }) });
@@ -280,10 +270,9 @@ async function deleteProduct(productId) { // eslint-disable-line no-unused-vars
 }
 
 
-// Модалка заказа (добавить/редактировать)
 let _orderItems = [];
 
-async function openOrderModal(orderId) { // eslint-disable-line no-unused-vars
+async function openOrderModal(orderId) {
   const overlay = document.getElementById('order-modal');
   if (!overlay) return;
 
@@ -363,14 +352,14 @@ function renderOrderItems() {
     </div>`).join('');
 }
 
-function addOrderItem() {           // eslint-disable-line no-unused-vars
+function addOrderItem() {       
   _orderItems.push({ article: '', quantity: 1 });
   renderOrderItems();
   const rows = document.querySelectorAll('.order-item-row');
   if (rows.length) rows[rows.length - 1].querySelector('input').focus();
 }
 
-async function saveOrder(orderId) { // eslint-disable-line no-unused-vars
+async function saveOrder(orderId) {
   const data = {
     order_id:        orderId,
     order_date:      document.getElementById('o-date').value  || null,
@@ -386,7 +375,7 @@ async function saveOrder(orderId) { // eslint-disable-line no-unused-vars
   else       alert('Ошибка сохранения: ' + (d.error || 'неизвестно'));
 }
 
-async function deleteOrder(orderId) { // eslint-disable-line no-unused-vars
+async function deleteOrder(orderId) {
   if (!confirm('Удалить заказ? Действие необратимо.')) return;
   const d = await apiFetch('/api/order/delete',
     { method: 'POST', body: JSON.stringify({ order_id: orderId }) });

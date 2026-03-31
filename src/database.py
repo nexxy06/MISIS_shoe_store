@@ -1,14 +1,9 @@
-"""
-database.py — Доступ к БД и HTML-фрагменты для ООО «Обувь»
-"""
-
 import os
 import sqlite3
 import secrets
 import time
 import re
 
-# src/ is one level below the project root
 _SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(_SRC_DIR)
 DB_PATH = os.path.join(BASE_DIR, "shop.db")
@@ -390,7 +385,6 @@ def esc(s) -> str:
 def sel_opts(
     items: list[str], selected: str = "", empty_label: str | None = None
 ) -> str:
-    """Build <option> tags for a <select>."""
     out = ""
     if empty_label is not None:
         sel = "selected" if not selected else ""
@@ -407,7 +401,6 @@ def product_row_html(p, can_edit: bool = False) -> str:
     stock = int(p["stock_qty"])
     final_p = round(price * (1 - discount / 100), 2)
 
-    # Row highlight class
     if stock == 0:
         row_cls = "row-no-stock"
     elif discount > 15:
@@ -415,7 +408,6 @@ def product_row_html(p, can_edit: bool = False) -> str:
     else:
         row_cls = ""
 
-    # Photo
     photo = p["photo"]
     img_src = (
         f"/static/images/{photo}"
@@ -423,7 +415,6 @@ def product_row_html(p, can_edit: bool = False) -> str:
         else "/static/images/picture.png"
     )
 
-    # Price display
     if discount > 0:
         price_html = (
             f'<span class="price-old">{price:,.2f}\u00a0₽</span>'
@@ -432,14 +423,12 @@ def product_row_html(p, can_edit: bool = False) -> str:
     else:
         price_html = f'<span class="price-plain">{price:,.2f}\u00a0₽</span>'
 
-    # Discount badge
     disc_cell = (
         f'<span class="disc-badge">{discount:.0f}%</span>'
         if discount > 0
         else '<span class="no-disc">—</span>'
     )
 
-    # Admin action buttons
     actions = ""
     if can_edit:
         actions = (

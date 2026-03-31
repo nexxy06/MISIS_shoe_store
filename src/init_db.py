@@ -1,7 +1,3 @@
-"""
-init_db.py — Создание схемы и импорт данных
-"""
-
 import os
 import re
 import sqlite3
@@ -111,10 +107,9 @@ def create_tables() -> None:
 
 
 def _parse_date(val) -> str | None:
-    """Accept dd.mm.yyyy, m/d/yy, pandas Timestamp, or ISO strings."""
     if val is None:
         return None
-    if hasattr(val, "strftime"):  # pandas Timestamp
+    if hasattr(val, "strftime"):
         try:
             return val.strftime("%Y-%m-%d")
         except Exception:
@@ -122,16 +117,13 @@ def _parse_date(val) -> str | None:
     s = str(val).strip()
     if not s or s.lower() in ("nan", "nat", ""):
         return None
-    # dd.mm.yyyy
     m = re.match(r"^(\d{1,2})\.(\d{1,2})\.(\d{4})$", s)
     if m:
         d, mo, y = m.groups()
         return f"{y}-{mo.zfill(2)}-{d.zfill(2)}"
-    # Already ISO
     m2 = re.match(r"^(\d{4})-(\d{2})-(\d{2})", s)
     if m2:
         return s[:10]
-    # Fallback: let pandas try
     try:
         import pandas as _pd
 
@@ -336,7 +328,6 @@ def main() -> None:
     import_orders(conn)
     conn.close()
 
-    # Summary
     conn2 = _connect()
     print("\n=== Import summary ===")
     for tbl, label in [
